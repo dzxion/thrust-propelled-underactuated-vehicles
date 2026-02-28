@@ -106,7 +106,7 @@ beta_z = pa.beta_z;
 eta_z = pa.eta_z;
 tao = pa.tao;
 
-e1 = [1;0;0];
+e1 = [1;0];
 e2 = [0;1;0];
 e3 = [0;0;1];
 
@@ -129,7 +129,7 @@ gamma_e_hat = g*e3;
 gamma_d = [0;0;0];
 gamma_e_d_hat = gamma_e_hat - gamma_d;
 % gamma = gamma_e - x_r_dot_dot;
-gamma = gamma_d + sat(gamma_e_d_hat,M) - x_r_dot_dot + h((norm(y))^2,beta,eta)*y + z_dot_dot;
+F = m*g*e1 + Fa - m*x_r_dot_dot + h((norm(y))^2,beta,eta)*y;
 gamma_ba = R_T*gamma;
 gamma_norm = norm(gamma);
 mu_1 = mu_tao(gamma_norm + gamma_ba(3),tao);
@@ -139,8 +139,9 @@ S2 = skew_symmetric_matrix(R*e2);
 gamma_T = gamma.';
 sigma = a/k1*tanh(k1*v_ba(3)/a);
 
-T = F1 + k1*Fp_norm*v1_tilde;
-omega = k2*Fp_norm*v2_tilde + mu_1*k3*Fp_norm*Fp_ba(2)/((Fp_norm + Fp_ba(1))^2) - mu_2*Fp_ba_T*S*R_T*F_delta/(Fp_norm^2); 
+F_ba = R_T*F;
+T = F_ba + k1*Fp_norm*v_tilde(1);
+omega = k2*Fp_norm*v_tilde(2) + mu_1*k3*Fp_norm*Fp_ba(2)/((Fp_norm + Fp_ba(1))^2) - mu_2*Fp_ba_T*S*R_T*F_delta/(Fp_norm^2); 
 
 block.OutputPort(1).Data = T;
 block.OutputPort(2).Data = omega;
