@@ -20,16 +20,16 @@ function setup(block)
   block.SetPreCompInpPortInfoToDynamic;
   block.SetPreCompOutPortInfoToDynamic;
   
-  block.InputPort(1).Dimensions        = [3,1];% x_r
+  block.InputPort(1).Dimensions        = [2,1];% x_r_dot
   block.InputPort(1).DirectFeedthrough = true;
  
-  block.InputPort(2).Dimensions        = [3,1];% x
+  block.InputPort(2).Dimensions        = [2,1];% v
   block.InputPort(2).DirectFeedthrough = true;
   
-  block.InputPort(3).Dimensions        = [3,1];% v
+  block.InputPort(3).Dimensions        = [2,2];% R
   block.InputPort(3).DirectFeedthrough = true;
   
-  block.InputPort(4).Dimensions        = [3,3];% R
+  block.InputPort(4).Dimensions        = [2,1];% x_dot_w
   block.InputPort(4).DirectFeedthrough = true;
   
 %   block.InputPort(5).Dimensions        = [3,1];
@@ -42,7 +42,7 @@ function setup(block)
   block.SampleTimes = [0 0];
   
   %% Setup Dwork
-  block.NumContStates = 6;
+  block.NumContStates = 0;
   
   %% Set the block simStateCompliance to default (i.e., same as a built-in block)
   block.SimStateCompliance = 'DefaultSimState';
@@ -73,74 +73,57 @@ function InitConditions(block)
 
 %% Initialize Dwork
 %   block.Dwork(1).Data = block.DialogPrm(1).Data;
-block.ContStates.Data = [0;
-                         0;
-                         0;
-                         0;
-                         0;
-                         0];
+% block.ContStates.Data = [0;
+%                          0;
+%                          0;
+%                          0;
+%                          0;
+%                          0];
   
 %endfunction
 
 function Output(block)
 
-x_r = block.InputPort(1).Data;
-x = block.InputPort(2).Data;
-v = block.InputPort(3).Data;
-R = block.InputPort(4).Data;
-% T = block.InputPort(4).Data;
+x_r_dot = block.InputPort(1).Data;
+v = block.InputPort(2).Data;
+R = block.InputPort(3).Data;
+x_dot_w = block.InputPort(4).Data;
 % Gamma = block.InputPort(5).Data;
 
 pa = block.DialogPrm(1).Data;
-g = 9.81;
+g = pa.g;
 k1 = pa.k1;
 k2 = pa.k2;
 k3 = pa.k3;
-a = pa.a;
-M = pa.M;
-delta = pa.delta;
-k_z = pa.k_z;
-beta = pa.beta;
-eta = pa.eta;
-beta_z = pa.beta_z;
-eta_z = pa.eta_z;
+ka = pa,ka;
 tao = pa.tao;
 
 e1 = [1;0];
-e2 = [0;1;0];
-e3 = [0;0;1];
 
 gamma_dot = [0;0;0];
 x_r_dot_dot = [0;0;0];
-x_r_dot = [0;0;0];
 
-x_tilde = x - x_r;
-z1 = block.ContStates.Data(1:3,1);
-z2 = block.ContStates.Data(4:6,1);
-z = z1;
-z_dot = z2;
-z_dot_dot = -2*k_z*z2 - k_z^2 * (z1-sat(z1,delta)) + k_z*h((norm(x_tilde))^2,beta_z,eta_z)*x_tilde;
+S = rotration_matrix_2d(pi/2);
+I = rotration_matrix_2d(0);
 
 R_T = R.';
 v_tilde = v - R_T*x_r_dot;
-y = x_tilde + z;
-v_ba = v_tilde + R_T*z_dot;
-gamma_e_hat = g*e3;
-gamma_d = [0;0;0];
-gamma_e_d_hat = gamma_e_hat - gamma_d;
+x_dot = R*v;
+xa_dot = x_dot - x_dot_w;
+norm_xa_dot = norm(xa_dot);
+Fa = ka*norm_xa_dot*(cL*S-cD*I)*xa_dot;
+fp = ka*norm_xa_dot*(cLp*S+cDp)*xa_dot;
 % gamma = gamma_e - x_r_dot_dot;
-F = m*g*e1 + Fa - m*x_r_dot_dot + h((norm(y))^2,beta,eta)*y;
-gamma_ba = R_T*gamma;
-gamma_norm = norm(gamma);
-mu_1 = mu_tao(gamma_norm + gamma_ba(3),tao);
-mu_2 = mu_tao(gamma_norm,tao);
-S1 = skew_symmetric_matrix(R*e1);
-S2 = skew_symmetric_matrix(R*e2);
-gamma_T = gamma.';
-sigma = a/k1*tanh(k1*v_ba(3)/a);
-
+F = m*g*e1 + Fa - m*x_r_dot_dot;
+Fp = m*g*e1 + fp - m*x_r_dot_dot;
+F_delta = dfpdxa*xa_dot_dot - dfpdalpha*gamma_dot - m*xr_dot_dot_dot;
+Fp_norm = norm(Fp);
 F_ba = R_T*F;
-T = F_ba + k1*Fp_norm*v_tilde(1);
+Fp_ba = R_T*Fp;
+mu_1 = mu_tao(Fp_norm + Fp_ba(1),tao);
+mu_2 = mu_tao(Fp_norm,tao);
+
+T = F_ba(1) + k1*Fp_norm*v_tilde(1);
 omega = k2*Fp_norm*v_tilde(2) + mu_1*k3*Fp_norm*Fp_ba(2)/((Fp_norm + Fp_ba(1))^2) - mu_2*Fp_ba_T*S*R_T*F_delta/(Fp_norm^2); 
 
 block.OutputPort(1).Data = T;
@@ -150,21 +133,21 @@ block.OutputPort(2).Data = omega;
 
 function Derivative(block)
 
-pa = block.DialogPrm(1).Data;
-delta = pa.delta;
-k_z = pa.k_z;
-beta_z = pa.beta_z;
-eta_z = pa.eta_z;
-
-x_r = block.InputPort(1).Data;
-x = block.InputPort(2).Data;
-x_tilde = x - x_r;
-z1 = block.ContStates.Data(1:3,1);
-z2 = block.ContStates.Data(4:6,1);
-z_dot = z2;
-z_dot_dot = -2*k_z*z2 - k_z^2 * (z1-sat(z1,delta)) + k_z*h((norm(x_tilde))^2,beta_z,eta_z)*x_tilde;
-block.Derivatives.Data = [z_dot;
-                          z_dot_dot];
+% pa = block.DialogPrm(1).Data;
+% delta = pa.delta;
+% k_z = pa.k_z;
+% beta_z = pa.beta_z;
+% eta_z = pa.eta_z;
+% 
+% x_r = block.InputPort(1).Data;
+% x = block.InputPort(2).Data;
+% x_tilde = x - x_r;
+% z1 = block.ContStates.Data(1:3,1);
+% z2 = block.ContStates.Data(4:6,1);
+% z_dot = z2;
+% z_dot_dot = -2*k_z*z2 - k_z^2 * (z1-sat(z1,delta)) + k_z*h((norm(x_tilde))^2,beta_z,eta_z)*x_tilde;
+% block.Derivatives.Data = [z_dot;
+%                           z_dot_dot];
 
 %endfunction
 
@@ -181,7 +164,7 @@ block.InputPort(idx).SamplingMode = fd;
 
 block.OutputPort(1).SamplingMode = fd;
 block.OutputPort(2).SamplingMode = fd;
-block.OutputPort(3).SamplingMode = fd;
+% block.OutputPort(3).SamplingMode = fd;
 
 %endfunction
 

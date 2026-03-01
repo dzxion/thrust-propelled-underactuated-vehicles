@@ -21,10 +21,10 @@ pa.L = 0.2;
 % %% controller parameters
 % pa.m_hat = 3;
 % pa.J_hat = diag([0.1,0.1,0.03]);
-% pa.k_a = 5;
-% pa.k1 = 0.245;
-% pa.k2 = 0.06;
-% pa.k3 = 9.6;
+pa.ka = 0.6460;
+pa.k1 = 0.1529;
+pa.k2 = 0.0234;
+pa.k3 = 6;
 % pa.K_w = diag([20,20,20]);
 % pa.beta = 1.28;
 % pa.eta = 12;
@@ -34,7 +34,7 @@ pa.L = 0.2;
 % pa.eta_z = 0.8;
 % pa.delta = 8;
 % pa.M = 50;
-% pa.tao = 1;
+pa.tao = 80;
 
 %% initial state
 pa.x0 = [0;0];
