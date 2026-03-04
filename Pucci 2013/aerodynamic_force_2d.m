@@ -20,13 +20,13 @@ function setup(block)
   block.SetPreCompInpPortInfoToDynamic;
   block.SetPreCompOutPortInfoToDynamic;
  
-  block.InputPort(1).Dimensions        = [2,1];% v
+  block.InputPort(1).Dimensions        = [2,1];% x_dot
   block.InputPort(1).DirectFeedthrough = true;
   
-  block.InputPort(2).Dimensions        = [2,1];% vw
+  block.InputPort(2).Dimensions        = [2,1];% xw_dot
   block.InputPort(2).DirectFeedthrough = true;
   
-  block.InputPort(3).Dimensions        = [1];% alpha
+  block.InputPort(3).Dimensions        = [1];% theta
   block.InputPort(3).DirectFeedthrough = true;
   
 %   block.InputPort(4).Dimensions        = 1;
@@ -81,14 +81,14 @@ function InitConditions(block)
 
 function Output(block)
 
-v = block.InputPort(1).Data;
-vw = block.InputPort(2).Data;
-alpha = block.InputPort(3).Data;
+x_dot = block.InputPort(1).Data;
+xw_dot = block.InputPort(2).Data;
+theta = block.InputPort(3).Data;
 
 pa = block.DialogPrm(1).Data;
 m = pa.m;
 g = pa.g;
-alpha_hat = pa.alpha_hat;
+alpha_ba = pa.alpha_ba;
 kL = pa.kL;
 kD = pa.kD;
 c0 = pa.c0;
@@ -97,19 +97,26 @@ c2 = pa.c2;
 c3 = pa.c3;
 ka = pa.ka;
 
+xa_dot = x_dot - xw_dot;
+R = [cos(theta) -sin(theta);
+     sin(theta) cos(theta)];
+z_L = R*[1;0];
+z_L = -z_L;
+alpha = vector_angle_2d(xa_dot,z_L,'rad');
+
 c_LL = c1*sin(2*alpha);
 c_DL = c0+2*c1*(sin(alpha))^2;
 c_Ls = 0.5*c2^2/((c2-c3)*(cos(alpha))^2+c3)*sin(2*alpha);
 c_Ds = c0+c2*c3/((c2-c3)*(cos(alpha))^2+c3)*(sin(alpha))^2;
-sigma_kL = (1+tanh(kL*alpha_hat^2-kL*alpha^2))/(1+tanh(kL*alpha_hat^2));
-sigma_kD = (1+tanh(kD*alpha_hat^2-kD*alpha^2))/(1+tanh(kD*alpha_hat^2));
+sigma_kL = (1+tanh(kL*alpha_ba^2-kL*alpha^2))/(1+tanh(kL*alpha_ba^2));
+sigma_kD = (1+tanh(kD*alpha_ba^2-kD*alpha^2))/(1+tanh(kD*alpha_ba^2));
 c_L = c_Ls*sigma_kL + c_LL*(1-sigma_kL);
 c_D = c_Ds*sigma_kD + c_DL*(1-sigma_kD);
-va = v - vw;
-R = [0 -1;1 0];
-va_ver = R*va;
-va_norm = norm(va);
-F_a = ka*va_norm*(c_L*va_ver-c_D*va);
+
+S = [0 -1;1 0];
+xa_dot_ver = S*xa_dot;
+xa_dot_norm = norm(xa_dot);
+F_a = ka*xa_dot_norm*(c_L*xa_dot_ver-c_D*xa_dot);
 block.OutputPort(1).Data = F_a;
   
 %endfunction

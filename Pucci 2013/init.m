@@ -1,10 +1,7 @@
 close all
 
-% ToDeg = 180/pi;
-% ToRad = pi/180;
-
 %% model parameters
-pa.alpha_hat = 11;
+pa.alpha_ba = deg2rad(11);
 pa.kL = 14;
 pa.kD = 41.8;
 pa.ka = 0.6460;
@@ -21,7 +18,6 @@ pa.L = 0.2;
 % %% controller parameters
 % pa.m_hat = 3;
 % pa.J_hat = diag([0.1,0.1,0.03]);
-pa.ka = 0.6460;
 pa.k1 = 0.1529;
 pa.k2 = 0.0234;
 pa.k3 = 6;
