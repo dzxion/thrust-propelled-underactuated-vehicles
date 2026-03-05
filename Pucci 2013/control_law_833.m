@@ -12,7 +12,7 @@ function setup(block)
   block.NumDialogPrms = 1;
   
   %% Register number of input and output ports
-  block.NumInputPorts  = 4;
+  block.NumInputPorts  = 5;
   block.NumOutputPorts = 2;
 
   %% Setup functional port properties to dynamically
@@ -32,8 +32,8 @@ function setup(block)
   block.InputPort(4).Dimensions        = [2,1];% x_dot_w
   block.InputPort(4).DirectFeedthrough = true;
   
-%   block.InputPort(5).Dimensions        = [3,1];
-%   block.InputPort(5).DirectFeedthrough = true;
+  block.InputPort(5).Dimensions        = [2,1];% x_dot_dot
+  block.InputPort(5).DirectFeedthrough = true;
   
   block.OutputPort(1).Dimensions       = [1];
   block.OutputPort(2).Dimensions       = [1];
@@ -88,33 +88,34 @@ x_r_dot = block.InputPort(1).Data;
 x_dot = block.InputPort(2).Data;
 theta = block.InputPort(3).Data;
 xw_dot = block.InputPort(4).Data;
-% Gamma = block.InputPort(5).Data;
+x_dot_dot = block.InputPort(5).Data;
 
 pa = block.DialogPrm(1).Data;
+m = pa.m;
 g = pa.g;
 k1 = pa.k1;
 k2 = pa.k2;
 k3 = pa.k3;
 ka = pa.ka;
 tao = pa.tao;
-alpha_ba = pa.alpha_ba;
-kL = pa.kL;
-kD = pa.kD;
-
-c0 = pa.c0;
-c1 = pa.c1;
-c2 = pa.c2;
-c3 = pa.c3;
+% alpha_ba = pa.alpha_ba;
+% kL = pa.kL;
+% kD = pa.kD;
+% c0 = pa.c0;
+% c1 = pa.c1;
+% c2 = pa.c2;
+% c3 = pa.c3;
 
 e1 = [1;0];
 
-gamma_dot = [0;0;0];
-x_r_dot_dot = [0;0;0];
+x_r_dot_dot = [0;0];
+xw_dot_dot = [0;0];
 
 S = rotration_matrix_2d(pi/2);
 I = rotration_matrix_2d(0);
 
 xa_dot = x_dot - xw_dot;
+xa_dot_dot = x_dot_dot - xw_dot_dot;
 R = [cos(theta) -sin(theta);
      sin(theta) cos(theta)];
 z_L = R*[1;0];
@@ -124,14 +125,20 @@ alpha = vector_angle_2d(xa_dot,z_L,'rad');
 R_T = R.';
 v_tilde = R_T*(x_dot - x_r_dot);
 
-c_LL = c1*sin(2*alpha);
-c_DL = c0+2*c1*(sin(alpha))^2;
-c_Ls = 0.5*c2^2/((c2-c3)*(cos(alpha))^2+c3)*sin(2*alpha);
-c_Ds = c0+c2*c3/((c2-c3)*(cos(alpha))^2+c3)*(sin(alpha))^2;
-sigma_kL = (1+tanh(kL*alpha_ba^2-kL*alpha^2))/(1+tanh(kL*alpha_ba^2));
-sigma_kD = (1+tanh(kD*alpha_ba^2-kD*alpha^2))/(1+tanh(kD*alpha_ba^2));
-c_L = c_Ls*sigma_kL + c_LL*(1-sigma_kL);
-c_D = c_Ds*sigma_kD + c_DL*(1-sigma_kD);
+% c_LL = c1*sin(2*alpha);
+% c_DL = c0+2*c1*(sin(alpha))^2;
+% c_Ls = 0.5*c2^2/((c2-c3)*(cos(alpha))^2+c3)*sin(2*alpha);
+% c_Ds = c0+c2*c3/((c2-c3)*(cos(alpha))^2+c3)*(sin(alpha))^2;
+% sigma_kL = (1+tanh(kL*alpha_ba^2-kL*alpha^2))/(1+tanh(kL*alpha_ba^2));
+% sigma_kD = (1+tanh(kD*alpha_ba^2-kD*alpha^2))/(1+tanh(kD*alpha_ba^2));
+% c_L = c_Ls*sigma_kL + c_LL*(1-sigma_kL);
+% c_D = c_Ds*sigma_kD + c_DL*(1-sigma_kD);
+
+c_L = c_L_function(alpha);
+c_D = c_D_function(alpha);
+c_L_dot = dc_L_dalpha_function(alpha);
+c_D_dot = dc_D_dalpha_function(alpha);
+
 c_Lp = c_L-(c_L_dot*cos(alpha)+c_D_dot*sin(alpha))*sin(alpha);
 c_Dp = c_D+(c_L_dot*cos(alpha)+c_D_dot*sin(alpha))*cos(alpha);
 
@@ -141,10 +148,15 @@ fp = ka*norm_xa_dot*(c_Lp*S-c_Dp*I)*xa_dot;
 % gamma = gamma_e - x_r_dot_dot;
 F = m*g*e1 + Fa - m*x_r_dot_dot;
 Fp = m*g*e1 + fp - m*x_r_dot_dot;
+dfpdxa = ka*norm_xa_dot*(c_Lp*S-c_Dp*I);
+dfpdalpha = [0;0];
+gamma_dot = 0;
+xr_dot_dot_dot = 0; 
 F_delta = dfpdxa*xa_dot_dot - dfpdalpha*gamma_dot - m*xr_dot_dot_dot;
 Fp_norm = norm(Fp);
 F_ba = R_T*F;
 Fp_ba = R_T*Fp;
+Fp_ba_T = Fp_ba';
 mu_1 = mu_tao(Fp_norm + Fp_ba(1),tao);
 mu_2 = mu_tao(Fp_norm,tao);
 

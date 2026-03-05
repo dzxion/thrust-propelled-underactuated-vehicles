@@ -88,13 +88,13 @@ theta = block.InputPort(3).Data;
 pa = block.DialogPrm(1).Data;
 m = pa.m;
 g = pa.g;
-alpha_ba = pa.alpha_ba;
-kL = pa.kL;
-kD = pa.kD;
-c0 = pa.c0;
-c1 = pa.c1;
-c2 = pa.c2;
-c3 = pa.c3;
+% alpha_ba = pa.alpha_ba;
+% kL = pa.kL;
+% kD = pa.kD;
+% c0 = pa.c0;
+% c1 = pa.c1;
+% c2 = pa.c2;
+% c3 = pa.c3;
 ka = pa.ka;
 
 xa_dot = x_dot - xw_dot;
@@ -104,14 +104,17 @@ z_L = R*[1;0];
 z_L = -z_L;
 alpha = vector_angle_2d(xa_dot,z_L,'rad');
 
-c_LL = c1*sin(2*alpha);
-c_DL = c0+2*c1*(sin(alpha))^2;
-c_Ls = 0.5*c2^2/((c2-c3)*(cos(alpha))^2+c3)*sin(2*alpha);
-c_Ds = c0+c2*c3/((c2-c3)*(cos(alpha))^2+c3)*(sin(alpha))^2;
-sigma_kL = (1+tanh(kL*alpha_ba^2-kL*alpha^2))/(1+tanh(kL*alpha_ba^2));
-sigma_kD = (1+tanh(kD*alpha_ba^2-kD*alpha^2))/(1+tanh(kD*alpha_ba^2));
-c_L = c_Ls*sigma_kL + c_LL*(1-sigma_kL);
-c_D = c_Ds*sigma_kD + c_DL*(1-sigma_kD);
+% c_LL = c1*sin(2*alpha);
+% c_DL = c0+2*c1*(sin(alpha))^2;
+% c_Ls = 0.5*c2^2/((c2-c3)*(cos(alpha))^2+c3)*sin(2*alpha);
+% c_Ds = c0+c2*c3/((c2-c3)*(cos(alpha))^2+c3)*(sin(alpha))^2;
+% sigma_kL = (1+tanh(kL*alpha_ba^2-kL*alpha^2))/(1+tanh(kL*alpha_ba^2));
+% sigma_kD = (1+tanh(kD*alpha_ba^2-kD*alpha^2))/(1+tanh(kD*alpha_ba^2));
+% c_L = c_Ls*sigma_kL + c_LL*(1-sigma_kL);
+% c_D = c_Ds*sigma_kD + c_DL*(1-sigma_kD);
+
+c_L = c_L_function(alpha);
+c_D = c_D_function(alpha);
 
 S = [0 -1;1 0];
 xa_dot_ver = S*xa_dot;

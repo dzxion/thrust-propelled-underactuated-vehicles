@@ -13,7 +13,7 @@ function setup(block)
 
   %% Register number of input and output ports
   block.NumInputPorts  = 3;
-  block.NumOutputPorts = 1;
+  block.NumOutputPorts = 2;
 
   %% Setup functional port properties to dynamically
   %% inherited.
@@ -33,6 +33,7 @@ function setup(block)
 %   block.InputPort(4).DirectFeedthrough = false;
   
   block.OutputPort(1).Dimensions       = [2,1];
+  block.OutputPort(2).Dimensions       = [2,1];
   
   %% Set block sample time to continuous
   block.SampleTimes = [0 0];
@@ -49,6 +50,7 @@ function setup(block)
   block.RegBlockMethod('Outputs',                 @Output);  
 %   block.RegBlockMethod('Update',                  @Update); 
   block.RegBlockMethod('Derivatives',             @Derivative);
+  block.RegBlockMethod('SetInputPortSamplingMode',@SetInputPortSamplingMode);
   
 %endfunction
 
@@ -70,12 +72,25 @@ function InitConditions(block)
 %   block.Dwork(1).Data = block.DialogPrm(1).Data;
 block.ContStates.Data = [0;
                          0;];
+% block.Derivatives.Data = [0;0];
   
 %endfunction
 
 function Output(block)
 
+pa = block.DialogPrm(1).Data;
+m = pa.m;
+g = pa.g;
+T = block.InputPort(1).Data;
+theta = block.InputPort(2).Data;
+Fa = block.InputPort(3).Data;
+R = [cos(theta) -sin(theta);
+     sin(theta) cos(theta)];
+i_b = [1;0];
+i = R*i_b;
+x_dot = (-T*i + Fa)/m + g;
 block.OutputPort(1).Data = block.ContStates.Data;
+block.OutputPort(2).Data = x_dot;
   
 %endfunction
 
@@ -101,8 +116,8 @@ i = R*i_b;
 % Sigma_R = -1/L * Se3;
 % Fe = m*g*e3 + R*Sigma_R*Gamma + R*F_ae; 
 
-v_dot = (-T*i + Fa)/m + g;
-block.Derivatives.Data = v_dot;
+x_dot = (-T*i + Fa)/m + g;
+block.Derivatives.Data = x_dot;
 
 %endfunction
 
@@ -110,5 +125,16 @@ function Update(block)
 
 %   block.Dwork(1).Data = block.InputPort(1).Data;
   
+%endfunction
+
+function SetInputPortSamplingMode(block, idx, fd)
+
+block.InputPort(idx).SamplingMode = fd;
+block.InputPort(idx).SamplingMode = fd;
+
+block.OutputPort(1).SamplingMode = fd;
+block.OutputPort(2).SamplingMode = fd;
+% block.OutputPort(3).SamplingMode = fd;
+
 %endfunction
 
