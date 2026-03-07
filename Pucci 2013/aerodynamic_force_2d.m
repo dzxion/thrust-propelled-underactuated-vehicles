@@ -26,7 +26,7 @@ function setup(block)
   block.InputPort(2).Dimensions        = [2,1];% xw_dot
   block.InputPort(2).DirectFeedthrough = true;
   
-  block.InputPort(3).Dimensions        = [1];% theta
+  block.InputPort(3).Dimensions        = [1];% alpha
   block.InputPort(3).DirectFeedthrough = true;
   
 %   block.InputPort(4).Dimensions        = 1;
@@ -83,7 +83,7 @@ function Output(block)
 
 x_dot = block.InputPort(1).Data;
 xw_dot = block.InputPort(2).Data;
-theta = block.InputPort(3).Data;
+alpha = block.InputPort(3).Data;
 
 pa = block.DialogPrm(1).Data;
 m = pa.m;
@@ -98,11 +98,11 @@ g = pa.g;
 ka = pa.ka;
 
 xa_dot = x_dot - xw_dot;
-R = [cos(theta) -sin(theta);
-     sin(theta) cos(theta)];
-z_L = R*[1;0];
-z_L = -z_L;
-alpha = vector_angle_2d(xa_dot,z_L,'rad');
+% R = [cos(theta) -sin(theta);
+%      sin(theta) cos(theta)];
+% z_L = R*[1;0];
+% z_L = -z_L;
+% alpha = vector_angle_2d(xa_dot,z_L,'rad');
 
 % c_LL = c1*sin(2*alpha);
 % c_DL = c0+2*c1*(sin(alpha))^2;

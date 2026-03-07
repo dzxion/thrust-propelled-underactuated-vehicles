@@ -19,7 +19,7 @@ function angle = vector_angle_2d(v1, v2, unit)
     
     % 避免除以零
     if norm_v1 == 0 || norm_v2 == 0
-%         error('向量不能为零向量');
+%         error('Vectors cannot be zero vectors');
         angle = 0;
         return;        % 提前返回
     end
@@ -40,6 +40,6 @@ function angle = vector_angle_2d(v1, v2, unit)
         case 'deg'
             angle = rad2deg(angle_rad);
         otherwise
-            error('单位必须是 ''rad'' 或 ''deg''');
+            error('Unit must be ''rad'' or ''deg''');
     end
 end

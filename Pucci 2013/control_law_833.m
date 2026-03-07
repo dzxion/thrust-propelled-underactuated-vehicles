@@ -12,7 +12,7 @@ function setup(block)
   block.NumDialogPrms = 1;
   
   %% Register number of input and output ports
-  block.NumInputPorts  = 5;
+  block.NumInputPorts  = 6;
   block.NumOutputPorts = 2;
 
   %% Setup functional port properties to dynamically
@@ -34,6 +34,9 @@ function setup(block)
   
   block.InputPort(5).Dimensions        = [2,1];% x_dot_dot
   block.InputPort(5).DirectFeedthrough = true;
+  
+  block.InputPort(6).Dimensions        = [1];% alpha
+  block.InputPort(6).DirectFeedthrough = true;
   
   block.OutputPort(1).Dimensions       = [1];
   block.OutputPort(2).Dimensions       = [1];
@@ -89,6 +92,7 @@ x_dot = block.InputPort(2).Data;
 theta = block.InputPort(3).Data;
 xw_dot = block.InputPort(4).Data;
 x_dot_dot = block.InputPort(5).Data;
+alpha = block.InputPort(6).Data;
 
 pa = block.DialogPrm(1).Data;
 m = pa.m;
@@ -118,9 +122,9 @@ xa_dot = x_dot - xw_dot;
 xa_dot_dot = x_dot_dot - xw_dot_dot;
 R = [cos(theta) -sin(theta);
      sin(theta) cos(theta)];
-z_L = R*[1;0];
-z_L = -z_L;
-alpha = vector_angle_2d(xa_dot,z_L,'rad');
+% z_L = R*[1;0];
+% z_L = -z_L;
+% alpha = vector_angle_2d(xa_dot,z_L,'rad');
 
 R_T = R.';
 v_tilde = R_T*(x_dot - x_r_dot);

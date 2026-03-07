@@ -12,8 +12,8 @@ pa.c3 = 0.3151;
 
 pa.m = 10;
 pa.g = 9.81;
-pa.J = diag([0.13,0.13,0.04]);
-pa.L = 0.2;
+% pa.J = diag([0.13,0.13,0.04]);
+% pa.L = 0.2;
 % 
 % %% controller parameters
 % pa.m_hat = 3;
